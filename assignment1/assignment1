@@ -1,1 +1,66 @@
+---
+title: "assignment1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+clubsoccerRatings <- read.csv("spi_global_rankings.csv")
+data.frame(clubsoccerRatings)
+#reads the csv file into r
+
+q <- (clubsoccerRatings$off)
+r <- (clubsoccerRatings$spi)
+x <- (clubsoccerRatings$rank)
+y <- (clubsoccerRatings$name)
+spi <- data.frame(c(clubsoccerRatings$spi))
+off <- data.frame(x1=c(clubsoccerRatings$off))
+dtoff <- transform.data.frame(off,x1=x1+.5)
+#this was done to cha ge the off column in the data by .5
+# it changed it and can see it in the numbers inside the table
+
+
+plot1 <- data.frame(off,spi)
+plot2<- data.frame(dtoff,spi)
+#variables for the tables I wanted to be plotted. First table shows original data,
+#second table shows data with the x varibale increased by .5
+
+plot(factor(y),q, las=2, xlab = "Team Name", ylab="Goals for (per game)")
+# this shows the qualittative data and quantitative data; This shows the relationship between the team and gols per game of the teams
+
+plot(plot1, main="Goals For (per game) vs SPI",xlab="Goals For (per game)", ylab="SPI")
+#regular table
+
+plot(plot2, main="Goals For (per game) vs SPI",xlab="Goals For (per game)", ylab="SPI")
+#variable was transfromed
+
+
+## data is from 2017 and it involves data that will will help shows and able to predict the club soccer teams ranking or Soccer Power Index (SPI).
+
+##This data includes the current rank of the team, previous rank, name of team, league they play for, offensive rating which shows how many goals they expect to score (per game), defensive rating which shows how many goals they they expect to concede (per game), and finally their SPI
+
+##source for dataset: https://www.kaggle.com/jpmiller/global-club-soccer-ratings
+```
 
