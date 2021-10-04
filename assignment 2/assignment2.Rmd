@@ -1,0 +1,202 @@
+---
+title: "Assignment2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+# plot(pressure)
+# 
+# install.packages("class")
+library(class)
+#  install.packages("caret")
+library(caret)
+# install.packages("dplyr")
+library(dplyr)
+# install.packages("FNN")
+library(FNN)
+# install.packages("ggplot2")
+library(ggplot2)
+# install.packages("esquisse")
+# library("esquisse")
+# install.packages("gmodels")
+library(gmodels)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+bankData <- read.csv("UniversalBank.csv", stringsAsFactors = FALSE)
+data.frame(bankData)
+
+data(bankData)
+sapply(bankData, min)
+sapply(bankData, max)
+#Checking max and min values of each column
+
+bankData$Education <- as.factor(bankData$Education)
+bankData$Education
+#changing this to a factor to later make them dummy variables
+
+personalLoanFactorInfo <- factor(bankData$Personal.Loan)
+bankData$Personal.Loan <- as.factor(bankData$Personal.Loan)
+bankData$Personal.Loan
+summary(personalLoanFactorInfo)
+#making sure that only 480 (9.6%) of applicants accepted the personal loan
+bankData$CCAvg <- as.integer(bankData$CCAvg)
+bankData$CCAvg
+#because for customer data the ccavg is in integer form
+
+
+dframe <- subset.data.frame(bankData, select = -c(ID,ZIP.Code))
+dframe <- data.frame(dframe)
+#this gets rid of the ID and Zip code columns
+
+Education_1 <- ifelse(dframe$Education == '1',1,0)
+Education_2 <- ifelse(dframe$Education == '2',1,0)
+Education_3 <- ifelse(dframe$Education == '3',1,0)
+#creating the dummy variables
+
+dframe <- data.frame(dframe,Education_1 = Education_1, Education_2 = Education_2, Education_3 = Education_3)
+#added this to a dataframe to have 14 columns (variables names)
+
+dframe <- subset(dframe,select = -Education)
+#Dummy variable for education has more than 2 categories - now thedata frame has all variables including dummy variables
+
+
+
+set.seed(1234)
+train_Index = createDataPartition(dframe$Personal.Loan, p= 0.6 , list=FALSE)#60%
+train_Data = dframe[train_Index,] 
+validation_Data = dframe[-train_Index,]#40%
+#creating the data partition to seprate from training 60% validation 40%
+
+customer_data <- data.frame(Age=40 , Experience=10, Income = 84, Family = 2, CCAvg = 1, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1,  CreditCard = 1, stringsAsFactors = FALSE)
+
+
+train_normalizedDf <- train_Data
+valid_normalizedDf <- validation_Data
+test_normalizedDf <- customer_data
+orginaldata_normalizedDf <- dframe
+#copying the orginial data - used the your code in github as help
+
+
+norm.values <- preProcess(train_Data[,c(-7)], method = c("center", "scale"))
+#-7 to remove the column personal loan since we do need it as we are predicting for that one
+# instead of 14 variables it really is 13 variables
+#this is doen to standarized the values 
+
+train_normalizedDf[,-7] <- predict(norm.values, train_Data[,-7])
+valid_normalizedDf[,-7] <- predict(norm.values, validation_Data[,-7])
+test_normalizedDf <- predict(norm.values,customer_data)
+orginaldata_normalizedDf[,-7] <- predict(norm.values,dframe[,-7])
+#using the caret packageto predict using the model
+summary(train_normalizedDf)
+#mean = 0
+#standarized values is done
+summary(valid_normalizedDf)
+#mean is not equal to 0
+
+
+set.seed(1234)
+prediction <- knn(train = train_normalizedDf[,-7], test = valid_normalizedDf[,-7], 
+          cl = train_normalizedDf[,7], k = 3, prob=TRUE)
+
+head(prediction)
+actual = valid_normalizedDf$Personal.Loan
+prediction_prob = attr(prediction,"probability")
+#no Loan
+row.names(train_Data)[attr(prediction,"prediciton index")]
+confusionMatrix(prediction,actual)
+#does not get approved for loan - Character (0) = No Loan approval
+
+accuracydata <- data.frame(k = seq(1,15,1), accuracy = rep(0,15))
+#checking it for from 1-15 k
+
+for (i in 1:15) { #going through the iteration 1-15
+  knnprediction <- knn(train = train_normalizedDf[,-7], test = valid_normalizedDf[,-7], cl = train_normalizedDf[,7], k=i, prob = TRUE)
+  accuracydata[i,2] <- confusionMatrix(knnprediction,valid_normalizedDf[,7])$overall[1]
+}
+
+accuracydata
+#dataframe that shows the best k - the answer is k=3 0.9590 has the highest output out of all the other 15
+
+#answer to question 2
+#best observation is k=3
+
+set.seed(1234)
+predictionQ3 <- knn(train = train_normalizedDf[,-7], test = valid_normalizedDf[,-7], 
+          cl = train_normalizedDf[,7], k = 3, prob=TRUE) 
+
+actual = valid_normalizedDf$Personal.Loan
+prediction_prob = attr(predictionQ3,"probability")
+
+row.names(train_Data)[attr(predictionQ3,"prediciton index")]
+confusionMatrix(predictionQ3,actual)
+#answer to question3 - Q3
+#this creates a dataframe that shows you where k=3 and k=1 is the best result
+
+
+predictionQ4 <- knn(train = orginaldata_normalizedDf[,-7], test = test_normalizedDf, cl= orginaldata_normalizedDf[,7], k=3, prob = TRUE)
+print(predictionQ4)
+#Answer to Q4
+#it will accept the loan as the output shows prob 1 for yes
+
+
+#The code below is for question 5 I just copied and paste the procedures from question 1-4 but instead I added the partition of data to 50,30,20 to answer question 5
+#followed the same procedures as question 1-4
+set.seed(1234)
+test_indexQ5 <- createDataPartition(bankData$Personal.Loan, p=.2, list = FALSE)
+test_dataQ5 <- bankData[test_indexQ5,]
+traval_dataQ5 <- bankData[-test_indexQ5,]
+ 
+train_IndexQ5 = createDataPartition(traval_dataQ5$Personal.Loan, p= 0.5 , list=FALSE)
+train_DataQ5 = traval_dataQ5[train_IndexQ5,] 
+validation_DataQ5 = traval_dataQ5[-train_IndexQ5,]
+
+train_normalizedDfQ5 <- train_DataQ5
+valid_normalizedDfQ5 <- validation_DataQ5
+test_normalizedDfQ5 <- test_dataQ5
+traval_normalizedDfQ5 <- traval_dataQ5
+#normalize values
+
+norm.valuesQ5 <- preProcess(train_DataQ5[,c(-7)], method = c("center", "scale"))
+
+train_normalizedDfQ5[,-7] <- predict(norm.valuesQ5, train_DataQ5[,-7])
+valid_normalizedDfQ5[,-7] <- predict(norm.valuesQ5, validation_DataQ5[,-7])
+test_normalizedDfQ5[-7] <- predict(norm.valuesQ5,test_normalizedDfQ5[,-7])
+test_normalizedDfQ5[-7] <- predict(norm.valuesQ5, test_dataQ5[-7])
+traval_normalizedDfQ5[-7] <- predict(norm.valuesQ5, traval_dataQ5[-7])
+#just copied and paste from previous questions and added extra variables for the 50,30,20
+
+
+# set.seed(1234)
+# predictionQ5 <- knn(train = train_normalizedDfQ5[,-7], test = test_normalizedDfQ5[,-7], 
+#           cl = traval_normalizedDfQ5[,7], k = 3, prob=TRUE) 
+# #not able to make it work idk why :(
+
+
+
+
+#1. This customer will not be accepted for a personal loan (output = 0)
+#2. k = 3 as we saw in the accuaracy data frame with an accuracy of .9590
+#3. matrix is shown
+#4This customer will be accepted for a personal loan (output = 1)
+
+```
