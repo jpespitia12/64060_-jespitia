@@ -1,0 +1,85 @@
+---
+title: "assignment4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+
+# # install.packages("factoextra")
+library(factoextra)
+# # install.packages('fpc')
+# library(fpc)
+# # install.packages("tidyverse")
+library(tidyverse)
+# install.packages("cluster")
+library(cluster)
+
+
+pharmaData <- read.csv("Pharmaceuticals.csv", stringsAsFactors = FALSE)
+
+# head(pharmaData)
+# summary(pharmaData)
+pharmaData1 <- pharmaData[,3:11]
+
+pharmaData1df <- data.frame(scale(pharmaData1))
+#dataframe of the scaled numbers of the data to make it easier to interpret
+
+# summary(pharmaData1)
+distance <- get_dist(pharmaData1df)
+fviz_dist(distance)
+
+
+fviz_nbclust(pharmaData1df,kmeans,method = "wss")
+fviz_nbclust(pharmaData1df,kmeans,method = "silhouette")
+#This right here shows that the best number of clusters for cluster analysis is 5 clusters. Determing k = 5
+
+set.seed(12345)
+k5 <- kmeans(pharmaData1df, centers = 5, nstart = 25)
+k5$centers
+k5$size
+k5$cluster[21]
+#This will run the k means to cluster the cars - we have told it to do it in 5 clusters
+
+fviz_cluster(k5, data = pharmaData1df)
+#Shows the 5 clusters and whats inside of them
+
+cluster1 <- data.frame(pharmaData1df[c(1,3,4,7,10,16,19,21),])
+cluster2 <- data.frame(pharmaData1df[c(11,13,15,17),])
+cluster3 <- data.frame(pharmaData1df[c(2,18),])
+cluster4 <- data.frame(pharmaData1df[c(5,9,14,20),])
+cluster5 <- data.frame(pharmaData1df[c(6,8,12),])
+
+#B. The interpretation is that 
+#cluster 1 has high net profit margin, low revenue growth
+#cluster 2 has the highest market cap, high ROE, high ROA, 
+#cluster 3 has the highest PE ratio
+#cluster 4 has highest revenue growth, low market cap, low asset turnover
+#cluster 5 has highest leverage, low net profit margin, 
+
+
+```
+
