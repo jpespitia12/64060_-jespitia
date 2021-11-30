@@ -1,0 +1,109 @@
+---
+title: "assignment5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# install.packages("dbscan")
+library(dbscan)
+# install.packages("cluster")
+library(cluster)
+# install.packages("dplyr")
+library(dplyr)
+# install.packages("MASS")
+library(MASS)
+# install.packages("tidyverse")
+library(tidyverse)
+# install.packages("factoextra")
+library(factoextra)
+
+cereals <- read.csv("Cereals.csv", stringsAsFactors = FALSE)
+cerealsName <- data.frame(cereals)
+#I used this to see which number corresponds to the name of the cereal - because when I plot the dendogram numbers of where the cereal is show instead of the cereal name. 
+
+cereals <- na.omit(cereals)
+#removes Cereals missing values
+
+
+
+cereals$name <- as.factor(cereals$name)
+cereals$mfr <- as.factor(cereals$mfr)
+cereals$type <- as.factor(cereals$type)
+
+cereals$name <- as.numeric(cereals$name)
+cereals$mfr <- as.numeric(cereals$mfr)
+cereals$type <- as.numeric(cereals$type)
+#Code above was done to switch the type from char to int so I can be able to scale in the next line of code
+
+cerealsScaling <- scale(cereals)
+#scale the data
+
+
+fviz_nbclust(cerealsScaling,kmeans,method = "silhouette")
+#used this to figure out optimal number of clusters 
+
+
+d <- dist(cerealsScaling, method = "euclidean")
+hc <- hclust(d, method = "ward")
+
+plot(hc, cex = .6, hang = -1)
+x <- rect.hclust(hc, k=8, border = 1:8)
+x
+
+
+
+#This plots the dendogram plus the clusters (8).
+#8 as optimal number of clusters based on the code used in line 60 & 61
+
+hcSingle <- agnes(cerealsScaling, method = "single")
+hcComplete <- agnes(cerealsScaling, method = "complete")
+hcAverage <- agnes(cerealsScaling, method = "average")
+hcWard <- agnes(cerealsScaling, method = "ward")
+
+print(hcSingle$ac)
+print(hcComplete$ac)
+print(hcAverage$ac)
+print(hcWard$ac)
+#using agnes to compare clustering. We can see that the strongest clustering structure mehthod, is ward
+
+pltree(hcSingle, cex=0.6, hang=-1, main = "Dendogram Agnes Single")
+pltree(hcComplete, cex=0.6, hang=-1, main = "Dendogram Agnes Complete")
+pltree(hcAverage, cex=0.6, hang=-1, main = "Dendogram Agnes Average")
+pltree(hcWard, cex=0.6, hang=-1, main = "Dendogram Agnes Ward")
+
+
+
+
+#The best method as we saw above is the Ward method
+
+#I would choose 8 clusters as I used the silhouette method to figure this out 
+
+# I do not believe that the stability of the clusters is stable. There are some cereals that show in both cluster 5 and cluster 8 This brings me to think that the clusters are not that stable 
+
+# I do believe that data should be normalized because if not you will not get accurate outcomes. since we are analyzing different variables it is good to normalize the data so that they can be compared to each other and not give any weight to any other variable since we are using it to group cereals based on similarities. Health cereals can be categorized by low calories, high protein, low sodium, high in vitamins, low in sugars, etc.
+
+```
+
