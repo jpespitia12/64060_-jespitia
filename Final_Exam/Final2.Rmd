@@ -1,0 +1,116 @@
+---
+title: "Final2"
+output: html_document
+---
+
+```{r}
+# install.packages("class")
+library(class)
+#  install.packages("caret")
+library(caret)
+# install.packages("dplyr")
+library(dplyr)
+# install.packages("FNN")
+library(FNN)
+# install.packages("ggplot2")
+library(ggplot2)
+# install.packages("gmodels")
+library(gmodels)
+# install.packages("MASS") 
+# install.packages("reshape2") 
+# install.packages("reshape") 
+
+# install.packages("tables")
+library(tables)
+ 
+library(MASS) 
+library(reshape2) 
+library(reshape) 
+# install.packages("naivebayes")
+library(naivebayes)
+
+
+diabetes <- read.csv("diabetes.csv", stringsAsFactors = FALSE)
+#reads the file
+
+diabetes$BloodPressure[diabetes$BloodPressure == "0"] <-NA
+diabetes$SkinThickness[diabetes$SkinThickness == "0"] <-NA
+diabetes$Insulin[diabetes$Insulin == "0"] <-NA
+diabetes$BMI[diabetes$BMI == "0"] <-NA
+diabetes$Glucose[diabetes$Glucose == "0"] <-NA
+
+#changes all 0 to NA so that in the next line of code I can remove the NA to have a better table and more accurate model and prediction
+
+diabetes <- na.omit(diabetes)
+#removes the NA values in the data frame
+
+diabetes$Outcome <- as.factor(diabetes$Outcome)
+# diabetes$Glucose <- as.factor(diabetes$Glucose)
+# diabetes$BloodPressure <- as.factor(diabetes$BloodPressure)
+# diabetes$Insulin <- as.factor(diabetes$Insulin)
+
+# summary(diabetes$BloodPressure)
+# summary(diabetes$SkinThickness)
+# summary(diabetes$Age)
+
+diabetes$BPcat[diabetes$BloodPressure > 82] <- "HighBP"
+diabetes$BPcat[diabetes$BloodPressure >= 53 &  diabetes$BloodPressure <= 82] <- "NormBP"
+diabetes$BPcat[diabetes$BloodPressure < 53] <- "LowBP"
+
+diabetes$STcat[diabetes$SkinThickness > 45] <- "HighST"
+diabetes$STcat[diabetes$SkinThickness >= 26 &  diabetes$SkinThickness <= 45] <- "NormST"
+diabetes$STcat[diabetes$SkinThickness < 26] <- "LowST"
+
+diabetes$Agecat[diabetes$Age > 61] <- "Elder"
+diabetes$Agecat[diabetes$Age >= 41 &  diabetes$Age <= 61] <- "Middle-Aged"
+diabetes$Agecat[diabetes$Age < 41] <- "Young"
+
+
+diabetes$BPcat <- as.factor(diabetes$BPcat)
+diabetes$STcat <- as.factor(diabetes$STcat)
+diabetes$Agecat <- as.factor(diabetes$Agecat)
+
+selectedVar <- c(9,10,11)
+# selectedVar <- diabetes[c(2,3,5)]
+
+set.seed(1234)
+diabetesIndex <- createDataPartition(diabetes$Outcome, p=.6, list = FALSE)
+diabetes.tr <- diabetes[diabetesIndex,selectedVar]
+diabetes.valida <- diabetes[-diabetesIndex,selectedVar]
+# summary(diabetes.tr)
+
+ftable(diabetes.tr, row.vars = c(3,1), col.vars = 2)
+ftable(diabetes.tr, row.vars = c(2,1), col.vars = 3)
+
+meltbank <- melt(diabetes.tr, id=c("STcat","Outcome"), variable = "BPcat")
+castbank <- dcast(meltbank, STcat+Outcome~BPcat)
+castbank[,c(1:3)]
+
+meltbank1 <- melt(diabetes.tr, id=c("BPcat","Outcome"), variable = "STcat")
+castbank1 <- dcast(meltbank1, BPcat+Outcome~STcat)
+castbank1[,c(1:3)]
+
+prop.table(table(diabetes.tr$Outcome))*100
+
+table(diabetes.tr$Outcome)
+
+ftable(diabetes.tr[,c(3,1)])
+ftable(diabetes.tr[,c(2,1)])
+
+
+diabetes.nb <- naive_bayes(Outcome ~., data = diabetes.tr)
+diabetes.nb
+
+predict <- predict(diabetes.nb,newdata = diabetes.valida)
+ftable(predict)
+actual <- diabetes.valida$Outcome
+
+confusionMatrix(predict,actual)
+
+table(predict,actual)
+
+
+
+
+```
+
